@@ -1,7 +1,6 @@
 import React, { Component } from 'react';
-import FormLogin from './src/components/FormLogin';
-import FormCadastro from './src/components/FormCadastro';
+import Routes from './src/Routes';
 
 export default props => (
-  <FormCadastro />
+  <Routes />
 );
