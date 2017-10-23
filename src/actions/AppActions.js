@@ -6,7 +6,8 @@ import {
     MODIFICA_ADICIONA_CONTATO_EMAIL,
     ADICIONA_CONTATO_ERRO,
     ADICIONA_CONTATO_SUCESSO,
-    LISTA_CONTATO_USUARIO 
+    LISTA_CONTATO_USUARIO,
+    MODIFICA_MENSAGEM 
 } from './types';
 
 export const modificaAdicionaContatoEmail = texto => {
@@ -86,4 +87,52 @@ export const contatosUsuarioFetch = () => {
                 dispatch({ type: LISTA_CONTATO_USUARIO, payload: snapshot.val() })
             })
     }
+}
+
+export const modificaMensagem = texto => {
+    return ({
+        type: MODIFICA_MENSAGEM,
+        payload: texto
+    })
+}
+
+export const enviarMensagem = (mensagem, contatoNome, contatoEmail) => {
+
+    //dados do usuario(email)
+    const { currentUser } = firebase.auth();
+    const usuarioEmail = currentUser.email;
+
+    return dispatch => {
+
+        //conversao b64
+        const usuarioEmailB64 = b64.encode(usuarioEmail);
+        const contatoEmailB64 = b64.encode(contatoEmail);
+
+        firebase.database().ref(`/mensagens/${usuarioEmailB64}/${contatoEmailB64}`)
+            .push({ mensagem, tipo: 'e' })
+            .then(() => {
+                firebase.database().ref(`/mensagens/${contatoEmailB64}/${usuarioEmailB64}`)
+                    .push({ mensagem, tipo: 'r' })
+                    .then(() => dispatch ({ type: 'xyz' }))
+            })
+            .then(() => { //armazenar o cabecalho de conversa do usuario autenticado
+                firebase.database().ref(`/usuario_conversas/${usuarioEmailB64}/${contatoEmailB64}`)
+                    .set({ nome: contatoNome, email: contatoEmail })
+            })
+            .then(() => { //armazenar o cabecalho de conversa do contato
+                
+                firebase.database().ref(`/contatos/${usuarioEmailB64}`)
+                    .once("value")
+                    .then(snapshot => {
+
+                        const dadosUsuario = _.first(_.values(snapshot.val()))
+
+                        firebase.database().ref(`/usuario_conversas/${contatoEmailB64}/${usuarioEmailB64}`)
+                            .set({ nome: dadosUsuario.nome, email: usuarioEmail })
+                    })     
+                
+            })
+    
+    }
+    
 }
