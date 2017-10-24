@@ -7,7 +7,9 @@ import {
     ADICIONA_CONTATO_ERRO,
     ADICIONA_CONTATO_SUCESSO,
     LISTA_CONTATO_USUARIO,
-    MODIFICA_MENSAGEM 
+    MODIFICA_MENSAGEM,
+    LISTA_CONVERSA_USUARIO,
+    ENVIA_MENSAGEM_SUCESSO 
 } from './types';
 
 export const modificaAdicionaContatoEmail = texto => {
@@ -113,7 +115,7 @@ export const enviarMensagem = (mensagem, contatoNome, contatoEmail) => {
             .then(() => {
                 firebase.database().ref(`/mensagens/${contatoEmailB64}/${usuarioEmailB64}`)
                     .push({ mensagem, tipo: 'r' })
-                    .then(() => dispatch ({ type: 'xyz' }))
+                    .then(() => dispatch ({ type: ENVIA_MENSAGEM_SUCESSO }))
             })
             .then(() => { //armazenar o cabecalho de conversa do usuario autenticado
                 firebase.database().ref(`/usuario_conversas/${usuarioEmailB64}/${contatoEmailB64}`)
@@ -135,4 +137,19 @@ export const enviarMensagem = (mensagem, contatoNome, contatoEmail) => {
     
     }
     
+}
+
+export const conversaUsuarioFetch = contatoEmail => {
+
+    const { currentUser } = firebase.auth();
+    //compor os emails na b64
+    let usuarioEmailB64 = b64.encode(currentUser.email);
+    let contatoEmailB64 = b64.encode(contatoEmail)
+
+    return dispatch => {
+        firebase.database().ref(`/mensagens/${usuarioEmailB64}/${contatoEmailB64}`)
+            .on("value", snapshot => {
+                dispatch({ type: LISTA_CONVERSA_USUARIO, payload: snapshot.val() })
+            })
+    }
 }
